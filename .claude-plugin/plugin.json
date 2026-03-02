@@ -1,0 +1,30 @@
+{
+  "name": "gtd-todoist",
+  "version": "1.0.0",
+  "description": "GTD workflow skills for Claude Code using Todoist (API v1)",
+  "skills": [
+    "gtd-capture",
+    "gtd-process-inbox",
+    "gtd-weekly-review",
+    "gtd-daily-plan",
+    "gtd-context-review"
+  ],
+  "commands": [
+    "gtd-todoist:capture",
+    "gtd-todoist:process-inbox",
+    "gtd-todoist:weekly-review",
+    "gtd-todoist:daily-plan",
+    "gtd-todoist:waiting-for"
+  ],
+  "agents": [
+    "todoist-gtd-assistant"
+  ],
+  "requires": {
+    "env": ["TODOIST_API_TOKEN"]
+  },
+  "todoist": {
+    "api_base": "https://api.todoist.com/api/v1",
+    "gtd_project_id": "6CrcvJ4hPxC5Mc2w",
+    "inbox_project_id": "6CrcvJ4gf682FP8H"
+  }
+}
