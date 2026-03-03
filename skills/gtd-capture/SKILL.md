@@ -27,12 +27,9 @@ Before asking anything, scan the task description and auto-assign as many fields
 
 | If the task contains... | Auto-assign |
 |------------------------|-------------|
-| "call", "ring", "phone", "text", "WhatsApp" | `@phone` |
-| "buy", "pick up", "get", "shop", "errand", "post office", "pharmacy" | `@errands` |
-| "email", "google", "look up", "research", "book" (online), "order" (online) | `@computer` |
-| "at work", "in the office", "at the lab" | `@work` |
+| "buy", "pick up", "get", "shop", "errand", "post office", "pharmacy", "out and about" | `@errands` |
+| "at work", "in the office", "at the lab", "at work" | `@work` |
 | "at home", "around the house", "in the flat" | `@home` |
-| "website", "online", "browser", "download", "upload" | `@online` |
 
 If context is ambiguous or the task could apply anywhere → leave unlabelled (Inbox with no label is fine).
 
@@ -114,8 +111,8 @@ For multiple items, list each on its own line.
 
 **Everything inferred — zero questions:**
 > "Remember to call the dentist"
-> → label: @phone (inferred from "call"), 2-min: skip (dentist calls take time)
-> → "Captured: **Call the dentist** @phone"
+> → 2-min: skip (dentist calls take time), no strong context signal → Inbox unlabelled
+> → "Captured: **Call the dentist**"
 
 **Date and context inferred:**
 > "I need to pick up milk on the way home tomorrow"
@@ -124,7 +121,7 @@ For multiple items, list each on its own line.
 
 **2-min rule triggered:**
 > "I need to reply to that Slack message from Jon"
-> → label: @computer, clearly simple
+> → clearly simple single action
 > → "That sounds quick — could you reply now in under 2 minutes?"
 
 **Nothing to infer, no questions either — just capture:**

@@ -13,7 +13,7 @@ user-invocable: true
 
 ## What This Skill Does
 
-Checks Todoist for today's due tasks, next actions, and waiting-for items, then helps the user pick their top 3 priorities and plan their energy. Takes about 5–10 minutes.
+Checks Todoist for today's due tasks and @next actions, then helps the user pick their top 3 priorities and plan their energy. Takes about 5–10 minutes.
 
 ## Daily Planning Flow
 
@@ -37,19 +37,21 @@ If none: "Nothing due today! Let's look at your next actions."
 
 ### Step 2: Ask About Context & Energy
 
-> "What's your context today — mainly @computer, @work, or other?"
+> "Where are you working today — mainly @work, @home, or out (@errands)?"
 > "Energy level? High (deep work), medium (normal tasks), or low (light/admin tasks)?"
 
-### Step 3: Fetch Next Actions by Context
+### Step 3: Fetch @next Actions by Context
 
 ```bash
-# Fetch next actions for the user's context
-curl -s "https://api.todoist.com/api/v1/tasks?project_id=<next_actions_id>&label=@computer" \
+# Fetch @next tasks for the user's context (e.g. @work)
+curl -s "https://api.todoist.com/api/v1/tasks?label=%40next" \
   --header "Authorization: Bearer $TODOIST_API_TOKEN"
 ```
 
+Filter client-side by the chosen context label (@work / @home / @errands).
+
 Filter based on energy:
-- **High energy** → P1/P2 tasks, any context matching
+- **High energy** → P1/P2 tasks first
 - **Low energy** → tasks with label `#energy-low` or `#2min`
 - **Medium** → standard priority order
 
@@ -78,15 +80,15 @@ curl -s -X POST "https://api.todoist.com/api/v1/tasks/<task_id>" \
   --data '{"priority": 4}'
 ```
 
-### Step 6: Check Waiting For
+### Step 6: Check Waiting On
 
-Fetch waiting-for items:
+Fetch items you're waiting on:
 ```bash
-curl -s "https://api.todoist.com/api/v1/tasks?project_id=<waiting_for_id>" \
+curl -s "https://api.todoist.com/api/v1/tasks?label=%40waitingon" \
   --header "Authorization: Bearer $TODOIST_API_TOKEN"
 ```
 
-"Is there anything you need to follow up on today from your Waiting For list?"
+"Is there anything you need to follow up on today from your Waiting On list?"
 
 ### Step 7: Daily Plan Summary
 
@@ -99,32 +101,16 @@ Focus:
   3. [third priority]
 
 Also due today: [list]
-Waiting for follow-up: [if any]
+Waiting on follow-up: [if any]
 Energy: [high/medium/low]
-Context: [@computer/@work/etc.]
+Context: [@work/@home/@errands]
 ──────────────────────────────────
 Go! ✓
 ```
 
 ## Tips
 
-- If energy is low, suggest batching `#2min` tasks or light @phone/@errands work
+- If energy is low, suggest batching `#2min` tasks or light @errands work
 - Remind user to time-block focus tasks if they mention meetings
 - If user has >10 due tasks, ask which to defer to tomorrow
-
-## API Note
-
-Resolve GTD child project IDs at the start:
-```bash
-PROJECTS=$(curl -s "https://api.todoist.com/api/v1/projects" \
-  --header "Authorization: Bearer $TODOIST_API_TOKEN")
-NEXT_ACTIONS_ID=$(echo "$PROJECTS" | python3 -c "
-import json,sys
-p = json.load(sys.stdin)
-projects = p.get('results', p) if isinstance(p, dict) else p
-na = next((x['id'] for x in projects if x['name'] == 'Next Actions' and x.get('parent_id') == '6CrcvJ4hPxC5Mc2w'), None)
-print(na or 'NOT_FOUND')
-")
-```
-
-Filter endpoint may need URL encoding: `today | overdue` → `today%20%7C%20overdue`
+- Filter endpoint may need URL encoding: `today | overdue` → `today%20%7C%20overdue`

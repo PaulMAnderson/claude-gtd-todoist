@@ -2,8 +2,8 @@
 name: gtd-context-review
 description: >
   GTD context review — show all next actions for a specific context/situation.
-  Use when: user says "@computer", "@errands", "@phone", "@home", "@work", "@online",
-  "what can I do at home", "what can I do on my phone", "context review", "running errands".
+  Use when: user says "@errands", "@home", "@work", "what can I do at home",
+  "what can I do at work", "running errands", "context review".
 user-invocable: true
 ---
 
@@ -13,7 +13,7 @@ user-invocable: true
 
 ## What This Skill Does
 
-Fetches and presents next actions filtered by context label (or all contexts), sorted by priority. Helps the user execute tasks in their current situation without having to think about what's appropriate.
+Fetches and presents @next tasks filtered by context label, sorted by priority. Helps the user execute tasks in their current situation without having to think about what's appropriate.
 
 ## Context Detection
 
@@ -21,37 +21,30 @@ First, detect the context from the user's message:
 
 | User says | Context label |
 |-----------|--------------|
-| "@computer", "at my computer", "on computer" | @computer |
-| "@phone", "on my phone", "phone calls" | @phone |
-| "@errands", "running errands", "out and about" | @errands |
-| "@home", "at home", "around the house" | @home |
-| "@work", "at work", "at the office" | @work |
-| "@online", "online", "browser tasks" | @online |
-| "all", "everything", "all contexts" | (no filter) |
+| "@errands", "running errands", "out and about", "on the way" | @errands |
+| "@home", "at home", "around the house", "in the flat" | @home |
+| "@work", "at work", "at the office", "at the lab" | @work |
+| "all", "everything", "all contexts" | (no filter — show all @next) |
 
-If unclear, ask: "Which context are you in? (@computer / @phone / @errands / @home / @work / @online)"
+If unclear, ask: "Which context are you in? (@work / @home / @errands)"
 
 ## Fetch Tasks
 
 ```bash
-# Fetch next actions with context label
-LABEL="@computer"  # or whichever detected
-curl -s "https://api.todoist.com/api/v1/tasks?project_id=<next_actions_id>&label=${LABEL}" \
+# Fetch all @next tasks, then filter by context client-side
+curl -s "https://api.todoist.com/api/v1/tasks?label=%40next" \
   --header "Authorization: Bearer $TODOIST_API_TOKEN"
 ```
 
-To get tasks across ALL projects with a label:
-```bash
-curl -s "https://api.todoist.com/api/v1/tasks?label=${LABEL}" \
-  --header "Authorization: Bearer $TODOIST_API_TOKEN"
-```
+Filter results to those also having the detected context label (e.g. `@work`).
+If no context filter, show all @next tasks grouped by project.
 
 ## Display Format
 
 Group by priority, then show ordered list:
 
 ```
-@computer Next Actions (N tasks)
+@work Next Actions (N tasks)
 ──────────────────────────────────
 P1 (Urgent):
   □ [task] — [project]
@@ -89,8 +82,10 @@ curl -s -X POST "https://api.todoist.com/api/v1/tasks/<task_id>/close" \
 curl -s -X POST "https://api.todoist.com/api/v1/tasks" \
   --header "Authorization: Bearer $TODOIST_API_TOKEN" \
   --header "Content-Type: application/json" \
-  --data "{\"content\": \"<task>\", \"project_id\": \"<next_actions_id>\", \"labels\": [\"$LABEL\"]}"
+  --data "{\"content\": \"<task>\", \"project_id\": \"6CrcvJ4gf682FP8H\", \"labels\": [\"@next\", \"$CONTEXT_LABEL\"]}"
 ```
+
+(Creates in Inbox with @next + context; process into correct project later if needed.)
 
 ## Special Cases
 
@@ -106,15 +101,8 @@ curl -s "https://api.todoist.com/api/v1/tasks?label=%23energy-low" \
   --header "Authorization: Bearer $TODOIST_API_TOKEN"
 ```
 
-## Resolve Project ID
-
+**"Waiting on"** — show @waitingon tasks to check for follow-ups:
 ```bash
-NEXT_ACTIONS_ID=$(curl -s "https://api.todoist.com/api/v1/projects" \
-  --header "Authorization: Bearer $TODOIST_API_TOKEN" | \
-python3 -c "
-import json,sys
-p = json.load(sys.stdin)
-projects = p.get('results', p) if isinstance(p, dict) else p
-print(next((x['id'] for x in projects if x['name'] == 'Next Actions' and x.get('parent_id') == '6CrcvJ4hPxC5Mc2w'), 'NOT_FOUND'))
-")
+curl -s "https://api.todoist.com/api/v1/tasks?label=%40waitingon" \
+  --header "Authorization: Bearer $TODOIST_API_TOKEN"
 ```

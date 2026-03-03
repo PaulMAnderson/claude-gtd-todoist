@@ -37,52 +37,52 @@ If user wants to process: invoke the gtd-process-inbox workflow inline.
 
 ### Phase 2: GET CURRENT — Review All Lists
 
-**2.1 Review Next Actions**
-Fetch all Next Actions tasks grouped by context label:
+**2.1 Review @next Actions**
+Fetch all @next tasks:
 ```bash
-curl -s "https://api.todoist.com/api/v1/tasks?project_id=<next_actions_id>" \
+curl -s "https://api.todoist.com/api/v1/tasks?label=%40next" \
   --header "Authorization: Bearer $TODOIST_API_TOKEN"
 ```
 
-Show grouped list. For each context, ask:
+Group by context label (@work / @home / @errands / none). For each group, ask:
 - Are any of these done? → complete them
-- Are any no longer relevant? → delete or move to Someday
+- Are any no longer relevant? → delete or change to @someday
 - Are any missing that should be here? → capture them
 
-**2.2 Review Waiting For**
-Fetch Waiting For tasks:
+**2.2 Review @waitingon**
+Fetch waiting-on tasks:
 ```bash
-curl -s "https://api.todoist.com/api/v1/tasks?project_id=<waiting_for_id>" \
+curl -s "https://api.todoist.com/api/v1/tasks?label=%40waitingon" \
   --header "Authorization: Bearer $TODOIST_API_TOKEN"
 ```
 
 For each item: "Any movement on this? Still waiting, or can it be closed/followed up?"
 - Still waiting → leave, optionally update note
-- Received → complete or move to Next Actions
+- Received → complete or add @next action
 - Follow-up needed → add next action "Follow up with [person] re: [topic]"
 
-**2.3 Review Someday Maybe**
-Fetch Someday Maybe tasks:
+**2.3 Review @someday**
+Fetch someday tasks:
 ```bash
-curl -s "https://api.todoist.com/api/v1/tasks?project_id=<someday_id>" \
+curl -s "https://api.todoist.com/api/v1/tasks?label=%40someday" \
   --header "Authorization: Bearer $TODOIST_API_TOKEN"
 ```
 
 "Anything here that should become active now?"
-- Yes → move to Next Actions or a project
+- Yes → change label to @next, optionally add context label
 - No longer relevant → delete
 - Still someday → leave
 
 **2.4 Review Active Projects**
-Fetch all top-level projects (Work, Life, Getting Things Done):
+Fetch all projects:
 ```bash
 curl -s "https://api.todoist.com/api/v1/projects" \
   --header "Authorization: Bearer $TODOIST_API_TOKEN"
 ```
 
-For each active project (non-GTD): "Is there a clear next action defined for this project?"
-- If no tasks → add a next action
-- If stalled → decide: is this still active or move to Someday?
+For each active project (non-GTD meta): "Is there a clear @next action defined for this project?"
+- If no @next tasks → add a next action
+- If stalled → decide: is this still active or move everything to @someday?
 
 ### Phase 3: GET CREATIVE — Look Ahead
 
@@ -90,10 +90,16 @@ For each active project (non-GTD): "Is there a clear next action defined for thi
 > "Look at your calendar for the next week: any deadlines, appointments, or commitments?"
 > "Are there any projects where you want to make progress this week?"
 
-Help user define 1–3 weekly priorities. Optionally add them as P1 tasks in Next Actions.
+Help user define 1–3 weekly priorities. Optionally mark them P1 via API:
+```bash
+curl -s -X POST "https://api.todoist.com/api/v1/tasks/<task_id>" \
+  --header "Authorization: Bearer $TODOIST_API_TOKEN" \
+  --header "Content-Type: application/json" \
+  --data '{"priority": 4}'
+```
 
 **3.2 Someday Activation**
-> "Anything you want to activate from Someday Maybe for this week or next?"
+> "Anything you want to activate from @someday for this week or next?"
 
 **3.3 Mind Sweep**
 > "Anything else on your mind that we haven't captured? Any open loops, worries, ideas?"
@@ -107,8 +113,9 @@ Present a summary:
 Weekly Review Complete ✓
 ─────────────────────────────────
 Inbox:         X items processed → Zero
-Next Actions:  X items across Y contexts
-Waiting For:   X items
+@next:         X tasks across Y contexts
+@waitingon:    X items
+@someday:      X items
 Projects:      X active, X reviewed
 Weekly focus:  [1-3 priorities user identified]
 ─────────────────────────────────
@@ -122,17 +129,10 @@ Next review:   [date + 7 days]
 - Keep momentum — don't get bogged down in one area
 - Total time goal: 30–60 minutes
 
-## API Note
+## Key Project IDs
 
-Resolve GTD child project IDs before the review:
-```bash
-curl -s "https://api.todoist.com/api/v1/projects" \
-  --header "Authorization: Bearer $TODOIST_API_TOKEN" | \
-python3 -c "
-import json,sys
-p = json.load(sys.stdin)
-projects = p.get('results', p) if isinstance(p, dict) else p
-gtd = {x['name']: x['id'] for x in projects if x.get('parent_id') == '6CrcvJ4hPxC5Mc2w'}
-print(json.dumps(gtd, indent=2))
-"
-```
+| Project | ID |
+|---------|-----|
+| Inbox | `6CrcvJ4gf682FP8H` |
+| Reference | `6g6G3C5gPjh7mmmh` |
+| Archive | `6g6G3C65hPRHCjJX` |
